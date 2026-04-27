@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { api, BackendAmbulance, BackendHospital } from "@/lib/api";
-import { Ambulance, Bed, Building2, Loader2, MapPin, Navigation, Phone, Search, Star } from "lucide-react";
+import { Ambulance, Bed, Building2, Crosshair, Loader2, MapPin, Navigation, Phone, Search, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const UserDashboard = () => {
@@ -22,10 +22,79 @@ const UserDashboard = () => {
   const [type, setType] = useState<"Basic" | "Advanced" | "ICU">("Advanced");
   const [trip, setTrip] = useState<{ ambulancePlate: string; eta: string } | null>(null);
   const [search, setSearch] = useState("");
+  const [locating, setLocating] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
 
   const [fleet, setFleet] = useState<BackendAmbulance[]>([]);
   const [hospitals, setHospitals] = useState<BackendHospital[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const detectLocation = (silent = false) => {
+    if (!("geolocation" in navigator)) {
+      if (!silent) {
+        toast({
+          title: "Geolocation unavailable",
+          description: "Your browser doesn't support location access.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setCoords({ lat: latitude, lon: longitude });
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+            { headers: { Accept: "application/json" } },
+          );
+          const data = await res.json();
+          const address =
+            data.display_name ||
+            `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+          setPickup(address);
+          if (!silent) {
+            toast({
+              title: "Location detected",
+              description: "Pickup address auto-filled from your device.",
+            });
+          }
+        } catch {
+          setPickup(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          if (!silent) {
+            toast({
+              title: "Using coordinates",
+              description: "Couldn't resolve address; coordinates filled instead.",
+            });
+          }
+        } finally {
+          setLocating(false);
+        }
+      },
+      (err) => {
+        setLocating(false);
+        if (!silent) {
+          toast({
+            title: "Location blocked",
+            description:
+              err.code === err.PERMISSION_DENIED
+                ? "Allow location access in your browser to auto-fill pickup."
+                : err.message,
+            variant: "destructive",
+          });
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  };
+
+  // Auto-detect on first load (silent — no toast if user blocks it)
+  useEffect(() => {
+    detectLocation(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,11 +207,31 @@ const UserDashboard = () => {
                 <CardContent>
                   <form onSubmit={handleRequest} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="pickup">Pickup location</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="pickup">Pickup location</Label>
+                        <button
+                          type="button"
+                          onClick={() => detectLocation(false)}
+                          disabled={locating}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline disabled:opacity-60"
+                        >
+                          {locating ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Crosshair className="h-3 w-3" />
+                          )}
+                          {locating ? "Detecting…" : "Use my location"}
+                        </button>
+                      </div>
                       <div className="relative">
                         <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="pickup" value={pickup} onChange={(e) => setPickup(e.target.value)} className="h-11 rounded-full pl-10" placeholder="e.g. Sector 15, Noida" />
+                        <Input id="pickup" value={pickup} onChange={(e) => setPickup(e.target.value)} className="h-11 rounded-full pl-10" placeholder="Auto-detecting from your device…" />
                       </div>
+                      {coords && (
+                        <p className="text-[11px] text-muted-foreground pl-1">
+                          📍 {coords.lat.toFixed(5)}, {coords.lon.toFixed(5)} · accurate from your browser
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="dest">Destination hospital (optional)</Label>
