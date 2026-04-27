@@ -14,6 +14,7 @@ const Index = () => (
       <HowItWorks />
       <WhyChoose />
       <FinalCTA />
+
     </main>
     <Footer />
   </div>

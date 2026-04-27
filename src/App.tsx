@@ -11,7 +11,7 @@ import Login from "./pages/Login.tsx";
 import UserDashboard from "./pages/UserDashboard.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import NotFound from "./pages/NotFound.tsx";
-
+import CallingPage from "./pages/calling.tsx";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -24,6 +24,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/calling" element={<CallingPage />} />
             <Route path="/login" element={<Login />} />
             <Route
               path="/dashboard"

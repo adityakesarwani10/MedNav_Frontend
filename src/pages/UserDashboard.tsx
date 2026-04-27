@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -194,6 +194,7 @@ const UserDashboard = () => {
               <TabsTrigger value="request" className="rounded-full px-5">Request</TabsTrigger>
               <TabsTrigger value="hospitals" className="rounded-full px-5">Hospitals</TabsTrigger>
               <TabsTrigger value="track" className="rounded-full px-5">Track</TabsTrigger>
+              <Link to="/calling" className="rounded-full px-5">Calling</Link>
             </TabsList>
 
             {/* Request */}
