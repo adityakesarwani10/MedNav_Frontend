@@ -125,17 +125,17 @@ export interface BackendCall {
 export const api = {
   baseUrl: BASE_URL,
 
-  async sendOtp(phoneRaw: string): Promise<{ phone: string }> {
+  async sendOtp(phoneRaw: string): Promise<{ phone: string , otp: string}> {
     const phone = normalizePhone(phoneRaw);
     if (phone.replace(/\D/g, "").length < 11) {
       throw new Error("Please enter a valid 10-digit phone number");
     }
-    await request<{ success: boolean; message: string }>("/api/auth/send-otp", {
+    const res = await request<{ success: boolean;  otp: string , message:string}>("/api/auth/send-otp", {
       method: "POST",
       body: { phone },
     });
     sessionStorage.setItem(PENDING_PHONE_KEY, phone);
-    return { phone };
+    return { phone, otp: res.otp };
   },
 
   async verifyOtp(otp: string): Promise<AuthUser> {

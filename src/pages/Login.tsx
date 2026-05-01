@@ -23,6 +23,7 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [resendIn, setResendIn] = useState(0);
+  const [tempotp, setTempotp] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -48,6 +49,7 @@ const Login = () => {
     setLoading(true);
     try {
       const res = await api.sendOtp(phone);
+      setTempotp(res.otp);
       setConfirmedPhone(res.phone);
       setStep("otp");
       setResendIn(30);
@@ -190,6 +192,11 @@ const Login = () => {
                   >
                     {resendIn > 0 ? `Resend in ${resendIn}s` : "Resend OTP"}
                   </button>
+                </div>
+                <div className="rounded-2xl bg-secondary/60 p-3 text-xs text-muted-foreground flex gap-2">
+                      <p className="text-center text-xs text-muted-foreground">
+                        For testing, use OTP <span className="font-mono font-bold">{tempotp}</span>
+                      </p>
                 </div>
               </form>
             )}
